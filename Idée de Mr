@@ -1,0 +1,24 @@
+Faire la liste des types d'anaques
+être capable de faire des statistiques sur le nombre d'arnaques par type
+être capable de faire de les caractériser
+il faut les agreger  et les nettoyer car il y a beaucoup de redondance dans les sources.
+faire une analyse et reporting dans un tableau de bord
+faire une base de donnée , relationnnel, MLD ,MDD , MCD
+et ensuite faire des requetes sql pour extraire les informations
+avoir des milliers de ligne en base de donnée, entre 10 000 et 20 000 lignes
+construire un  script python pour automatiser l'ensemble du processus
+créer un data dictionnaire des données collectées.
+faie un  canban des taches à faire
+organiser la méthodologie de travail 
+organiser les données dans des dossier en respectant les normes et standards
+faire du Machine Learning ( classification des arnaques par type )
+
+faire plusieur source de données
+les 5 sources
+1 Google Web Risk (Lookup API)
+2 Cybermalveillance.fr (flux Atom + fallback CSV)
+3 CNIL CSV
+4 PostgreSQL historique
+5 Hive Big Data
+
+API REST sécurisée JWT

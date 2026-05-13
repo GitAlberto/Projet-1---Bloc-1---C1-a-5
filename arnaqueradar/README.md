@@ -28,8 +28,8 @@
 └─────────────────────────────────────────────────────────────────┘
 
    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-   │ Google Web   │  │Cybermalveil. │  │   CNIL CSV   │
-   │ Risk (API)   │  │  (Scraping)  │  │  (Fichier)   │
+   │ URLhaus API  │  │Cybermalveil. │  │   CNIL CSV   │
+   │ (Recent URLs)│  │  (Scraping)  │  │  (Fichier)   │
    └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
           │                 │                  │
    ┌──────┴───────┐  ┌──────┴───────┐
@@ -40,7 +40,7 @@
           └────────┬────────┘
                    │
           ┌────────▼────────┐
-          │  collect.py     │   ← C1 : Collecte multi-sources
+          │ collecter.py    │   ← C1 : Collecte multi-sources
           │  (Orchestrateur)│
           └────────┬────────┘
                    │  raw_YYYYMMDD_HHMMSS.json
@@ -75,7 +75,7 @@
 
 | Code | Compétence | Fichiers principaux |
 |---|---|---|
-| **C1** | Collecter des données depuis sources hétérogènes | `collect/collect.py`, `collect/sources/` |
+| **C1** | Collecter des données depuis sources hétérogènes | `collect/collecter.py`, `collect/sources/` |
 | **C2** | Nettoyer et normaliser les données | `aggregate/aggregate.py` |
 | **C3** | Stocker les données en base relationnelle | `database/models.py`, `database/import_data.py`, `database/migrations/` |
 | **C4** | Exposer les données via une API REST sécurisée | `api/main.py`, `api/auth.py`, `api/schemas.py` |
@@ -101,7 +101,7 @@ docker compose up -d
 psql postgresql://postgres:Mot%20de%20passe@localhost:5433/arnaqueradar -f database/migrations/001_init.sql
 
 # 5. Exécuter le pipeline complet
-python collect/collect.py
+python collect/collecter.py
 python aggregate/aggregate.py
 python database/import_data.py
 

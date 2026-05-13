@@ -1,6 +1,0 @@
-# commentaire
-https://phish.test/login
-
-https://phish.test/login/
-ftp://ignore.example/file
-http://smish.test/path
