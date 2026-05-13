@@ -2,14 +2,14 @@
 Point d'entree principal du pipeline de collecte ArnaqueRadar (C1).
 
 Ce module orchestre la collecte multi-sources en appelant successivement
-les 5 connecteurs (Google Web Risk, Cybermalveillance, CNIL CSV, PostgreSQL,
+les 5 connecteurs (URLhaus API, Cybermalveillance, CNIL CSV, PostgreSQL,
 Hive). Chaque source est executee dans un bloc try/except independant :
 une source defaillante n'interrompt pas les autres.
 
 Le resultat brut est sauvegarde dans data/raw_YYYYMMDD_HHMMSS.json
 avec horodatage, puis le total collecte est journalise.
 
-Usage direct : python collect/collect.py
+Usage direct : python collect/collecter.py
 """
 
 import json
@@ -60,17 +60,17 @@ def run_collection() -> list[dict]:
 
     all_entries: list[dict] = [] # liste pour stocker toutes les entrees, chaque entree est un dictionnaire.
 
-    # ---- Source 1 : Google Web Risk (Lookup API) ----
+    # ---- Source 1 : URLhaus API ----
     try:
-        from collect.sources.google_web_risk import collect_google_web_risk
+        from collect.sources.urlhaus import collect_urlhaus
 
-        google_data = collect_google_web_risk()
-        logger.info("Source 1 [Google Web Risk] : %d entrees collectees.", len(google_data))
-        all_entries.extend(google_data)
+        urlhaus_data = collect_urlhaus()
+        logger.info("Source 1 [URLhaus] : %d entrees collectees.", len(urlhaus_data))
+        all_entries.extend(urlhaus_data)
     except Exception as exc: # en cas d'erreur, affiche un message d'erreur
-        logger.error("Source 1 [Google Web Risk] : echec inattendu - %s", exc)
+        logger.error("Source 1 [URLhaus] : echec inattendu - %s", exc)
 
-    # ---- Source 2 : Cybermalveillance (flux Atom + fallback CSV) ----
+    # ---- Source 2 : Cybermalveillance (pages officielles + Atom + fallback CSV) ----
     try:
         from collect.sources.cybermalveillance import collect_cybermalveillance # import de la fonction collect_cybermalveillance
 
