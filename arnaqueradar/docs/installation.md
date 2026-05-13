@@ -68,17 +68,22 @@ PG_PORT=5432
 PG_DB=arnaqueradar
 PG_USER=postgres              # ou votre utilisateur pgAdmin4
 PG_PASSWORD=VOTRE_MOT_DE_PASSE
-GOOGLE_WEB_RISK_API_KEY=VOTRE_CLE_API_GOOGLE_WEB_RISK
-GOOGLE_WEB_RISK_CANDIDATES_PATH=data/google_web_risk_candidates.txt
+URLHAUS_AUTH_KEY=VOTRE_AUTH_KEY_URLHAUS
+URLHAUS_RECENT_LIMIT=100
+CNIL_MAX_AGE_DAYS=30
 DATABASE_URL=postgresql://postgres:VOTRE_MOT_DE_PASSE@localhost/arnaqueradar
 SECRET_KEY=...                # générer avec : python -c "import secrets; print(secrets.token_hex(32))"
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=arnaqueradar2024
 ```
 
-> `GOOGLE_WEB_RISK_CANDIDATES_PATH` doit pointer vers un fichier texte contenant
-> une URL candidate par ligne. La source 1 interroge Google Web Risk URL par URL
-> et ne conserve que les correspondances `SOCIAL_ENGINEERING`.
+> `URLHAUS_AUTH_KEY` s'obtient gratuitement via le portail abuse.ch.
+> La source 1 interroge ensuite l'API `recent URLs` et récupère les ajouts
+> récents des 3 derniers jours, dans la limite définie par `URLHAUS_RECENT_LIMIT`.
+
+> `CNIL_MAX_AGE_DAYS` definit au bout de combien de jours le fichier
+> `data_CNIL/cnil_violations.csv` est considere comme ancien et doit
+> etre retelecharge automatiquement.
 
 > **Important** : ne committez jamais le fichier `.env`. Il est exclu par `.gitignore`.
 
@@ -117,7 +122,7 @@ docker compose up -d
 ## 7. Collecter les données
 
 ```bash
-python collect/collect.py
+python collect/collecter.py
 ```
 
 Le pipeline interroge les 5 sources. Si Hive est indisponible, le fallback
@@ -187,7 +192,7 @@ cp .env.example .env                               # Éditer .env avec vos ident
 # → Exécuter database/migrations/001_init.sql sur la base 'arnaqueradar'
 
 # Pipeline de données
-python collect/collect.py
+python collect/collecter.py
 python aggregate/aggregate.py
 python database/import_data.py
 
@@ -207,5 +212,5 @@ pytest tests/ -v
 | `database "arnaqueradar" does not exist` | Base non créée | Créer la base via pgAdmin4 (étape 3) |
 | `relation "signalements" does not exist` | Migration non exécutée | Exécuter `001_init.sql` (étape 5) |
 | `ModuleNotFoundError` | Virtualenv non activé | `venv\Scripts\activate` |
-| `clean_dataset.csv` vide | Aucun fichier `raw_*.json` | Exécuter `python collect/collect.py` d'abord |
+| `clean_dataset.csv` vide | Aucun fichier `raw_*.json` | Exécuter `python collect/collecter.py` d'abord |
 | Tests échouent sur `auth_token` | Mauvais `ADMIN_PASSWORD` | Vérifier `.env` : `ADMIN_PASSWORD=arnaqueradar2024` |

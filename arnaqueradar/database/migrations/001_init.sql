@@ -117,7 +117,8 @@ ON CONFLICT (code) DO NOTHING;
 -- Données de référence : sources de données
 -- -------------------------
 INSERT INTO sources (code, libelle, url, type_source) VALUES
-    ('google_web_risk',    'Google Web Risk',        'https://webrisk.googleapis.com/v1/uris:search',                    'api'),
+    ('urlhaus',            'URLhaus API',            'https://urlhaus-api.abuse.ch/v1/urls/recent/',                    'api'),
+    ('google_web_risk',    'Google Web Risk (legacy)', 'https://webrisk.googleapis.com/v1/uris:search',                 'api'),
     ('openphish',          'OpenPhish (legacy)',     'https://raw.githubusercontent.com/openphish/public_feed/refs/heads/main/feed.txt', 'api'),
     ('phishtank',          'PhishTank (legacy)',     'http://data.phishtank.com/data/online-valid.json', 'api'),
     ('cybermalveillance',  'Cybermalveillance.gouv', 'https://www.cybermalveillance.gouv.fr',            'scraping'),

@@ -45,6 +45,7 @@ TYPE_CODE_MAP: dict[str, str] = {
 }
 
 SOURCE_CODE_MAP: dict[str, str] = {
+    "urlhaus": "urlhaus",
     "google_web_risk": "google_web_risk",
     "openphish": "openphish",
     "phishtank": "phishtank",
@@ -55,8 +56,13 @@ SOURCE_CODE_MAP: dict[str, str] = {
 }
 
 SOURCE_REFERENCE_ROWS: dict[str, tuple[str, str | None, str]] = {
+    "urlhaus": (
+        "URLhaus API",
+        "https://urlhaus-api.abuse.ch/v1/urls/recent/",
+        "api",
+    ),
     "google_web_risk": (
-        "Google Web Risk",
+        "Google Web Risk (legacy)",
         "https://webrisk.googleapis.com/v1/uris:search",
         "api",
     ),

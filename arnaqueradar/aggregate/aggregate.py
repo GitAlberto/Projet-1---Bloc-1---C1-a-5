@@ -2,7 +2,7 @@
 Module d'agrégation et de normalisation des données brutes ArnaqueRadar.
 
 Ce module prend en entrée la liste brute de toutes les entrées collectées
-par le pipeline (collect.py) et produit un DataFrame pandas nettoyé,
+par le pipeline (collecter.py) et produit un DataFrame pandas nettoyé,
 dédupliqué et normalisé prêt pour l'import en base de données.
 
 Pipeline de nettoyage en 8 étapes :
@@ -167,10 +167,10 @@ def aggregate_sources(raw_data: list[dict[str, Any]]) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # Charger le dernier fichier raw_*.json produit par collect.py
+    # Charger le dernier fichier raw_*.json produit par collecter.py
     raw_files = sorted(glob.glob(str(DATA_DIR / "raw_*.json")))
     if not raw_files:
-        logger.error("Aucun fichier raw_*.json trouvé dans %s. Exécutez d'abord collect.py.", DATA_DIR)
+        logger.error("Aucun fichier raw_*.json trouvé dans %s. Exécutez d'abord collecter.py.", DATA_DIR)
         sys.exit(1)
 
     latest_raw = raw_files[-1]

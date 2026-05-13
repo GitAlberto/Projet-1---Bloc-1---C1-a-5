@@ -15,7 +15,7 @@ ArnaqueRadar **ne traite pas de données personnelles directes** au sens du RGPD
 - Des **métadonnées agrégées** (type d'arnaque, région administrative, date de signalement) ;
 - Des **statistiques** (nombre de signalements, fréquence d'apparition).
 
-Ces données ne permettent pas d'identifier, directement ou indirectement, une personne physique. Elles sont extraites de sources publiques (Google Web Risk, Cybermalveillance.gouv.fr, CNIL Open Data) et ne contiennent ni nom, ni prénom, ni adresse e-mail, ni numéro de téléphone, ni adresse IP nominative.
+Ces données ne permettent pas d'identifier, directement ou indirectement, une personne physique. Elles sont extraites de sources publiques (URLhaus, Cybermalveillance.gouv.fr, CNIL Open Data) et ne contiennent ni nom, ni prénom, ni adresse e-mail, ni numéro de téléphone, ni adresse IP nominative.
 
 > **En conséquence**, ArnaqueRadar n'est pas soumis à l'obligation de tenir un registre des activités de traitement au titre de l'article 30 du RGPD. Ce registre est produit à titre documentaire pour justifier cette absence.
 
@@ -67,7 +67,7 @@ Une fois par an, le responsable du traitement effectue une revue manuelle :
 
 ## Transferts hors UE
 
-L'utilisation de Google Web Risk implique l'envoi d'URLs candidates vers un service tiers de vérification. Les URLs soumises sont des URLs publiques, sans donnée personnelle directe. La localisation effective du traitement dépend des conditions du fournisseur utilisé au déploiement.
+ArnaqueRadar peut effectuer des requêtes sortantes vers l'API URLhaus afin de récupérer des indicateurs publics de compromission. Aucun envoi de donnée personnelle directe n'est prévu par ce flux. La localisation effective du traitement dépend néanmoins des conditions du fournisseur utilisé au déploiement.
 
 ---
 

@@ -25,7 +25,7 @@ class SignalementOut(BaseModel):
     type: str = Field(..., description="Type d'arnaque normalisé (phishing, sms_frauduleux, etc.).")
     region: Optional[str] = Field(None, description="Région française associée au signalement.")
     date_signalement: str = Field(..., description="Date du signalement au format YYYY-MM-DD.")
-    source: str = Field(..., description="Code de la source de collecte (google_web_risk, hive_logs, etc.).")
+    source: str = Field(..., description="Code de la source de collecte (urlhaus, hive_logs, etc.).")
     verified: bool = Field(False, description="Indique si le signalement a été vérifié.")
     titre: Optional[str] = Field(None, description="Titre ou description courte de l'arnaque.")
 

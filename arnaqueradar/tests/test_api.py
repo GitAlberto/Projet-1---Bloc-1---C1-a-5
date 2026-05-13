@@ -31,7 +31,7 @@ def _make_fake_signalement(
     type_code: str = "phishing",
     region_nom: str = "Île-de-France",
     date_sig: str = "2024-11-15",
-    source_code: str = "google_web_risk",
+    source_code: str = "urlhaus",
     verified: bool = True,
     titre: str = "Faux site bancaire",
 ) -> dict:
