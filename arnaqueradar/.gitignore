@@ -1,0 +1,37 @@
+# Environment variables — never commit .env
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Raw and clean data exports (generated at runtime)
+data/raw_*.json
+data/clean_*.csv
+data/cnil_violations.csv
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/

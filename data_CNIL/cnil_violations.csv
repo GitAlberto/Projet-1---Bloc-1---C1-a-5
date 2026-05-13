@@ -1,0 +1,26 @@
+url;organisation;type_violation;date_notification;nombre_personnes_concernees;region
+https://banque-alpha.fr/incident-1;Organisation_1;Accès non autorisé;2026-05-04;150;Île-de-France
+https://assurance-beta.fr/incident-2;Organisation_2;Perte de données;2026-04-22;300;Auvergne-Rhône-Alpes
+https://ecommerce-gamma.fr/incident-3;Organisation_3;Divulgation non intentionnelle;2026-04-10;450;Auvergne-Rhône-Alpes
+https://cabinet-medecin-delta.fr/incident-4;Organisation_4;Ransomware;2026-03-29;600;Île-de-France
+https://mutuelle-epsilon.fr/incident-5;Organisation_5;Phishing interne;2026-03-17;750;Auvergne-Rhône-Alpes
+https://telecom-zeta.fr/incident-6;Organisation_6;Accès non autorisé;2026-03-05;900;Auvergne-Rhône-Alpes
+https://mairie-eta.fr/incident-7;Organisation_7;Perte de données;2026-02-21;1050;Île-de-France
+https://hopital-theta.fr/incident-8;Organisation_8;Divulgation non intentionnelle;2026-02-09;1200;Auvergne-Rhône-Alpes
+https://banque-alpha.fr/incident-9;Organisation_9;Ransomware;2026-01-28;1350;Auvergne-Rhône-Alpes
+https://assurance-beta.fr/incident-10;Organisation_10;Phishing interne;2026-01-16;1500;Île-de-France
+https://ecommerce-gamma.fr/incident-11;Organisation_11;Accès non autorisé;2026-01-04;1650;Auvergne-Rhône-Alpes
+https://cabinet-medecin-delta.fr/incident-12;Organisation_12;Perte de données;2025-12-23;1800;Auvergne-Rhône-Alpes
+https://mutuelle-epsilon.fr/incident-13;Organisation_13;Divulgation non intentionnelle;2025-12-11;1950;Île-de-France
+https://telecom-zeta.fr/incident-14;Organisation_14;Ransomware;2025-11-29;2100;Auvergne-Rhône-Alpes
+https://mairie-eta.fr/incident-15;Organisation_15;Phishing interne;2025-11-17;2250;Auvergne-Rhône-Alpes
+https://hopital-theta.fr/incident-16;Organisation_16;Accès non autorisé;2025-11-05;2400;Île-de-France
+https://banque-alpha.fr/incident-17;Organisation_17;Perte de données;2025-10-24;2550;Auvergne-Rhône-Alpes
+https://assurance-beta.fr/incident-18;Organisation_18;Divulgation non intentionnelle;2025-10-12;2700;Auvergne-Rhône-Alpes
+https://ecommerce-gamma.fr/incident-19;Organisation_19;Ransomware;2025-09-30;2850;Île-de-France
+https://cabinet-medecin-delta.fr/incident-20;Organisation_20;Phishing interne;2025-09-18;3000;Auvergne-Rhône-Alpes
+https://mutuelle-epsilon.fr/incident-21;Organisation_21;Accès non autorisé;2025-09-06;3150;Auvergne-Rhône-Alpes
+https://telecom-zeta.fr/incident-22;Organisation_22;Perte de données;2025-08-25;3300;Île-de-France
+https://mairie-eta.fr/incident-23;Organisation_23;Divulgation non intentionnelle;2025-08-13;3450;Auvergne-Rhône-Alpes
+https://hopital-theta.fr/incident-24;Organisation_24;Ransomware;2025-08-01;3600;Auvergne-Rhône-Alpes
+https://banque-alpha.fr/incident-25;Organisation_25;Phishing interne;2025-07-20;3750;Île-de-France

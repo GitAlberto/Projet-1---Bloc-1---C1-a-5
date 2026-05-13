@@ -1,0 +1,23 @@
+# =============================================================================
+# Docker Compose — ArnaqueRadar
+# PostgreSQL : géré localement via pgAdmin4 (ne pas démarrer ici)
+# Seul Apache Hive est démarré via Docker pour la source Big Data.
+# Le fallback automatique de hive_logs.py s'active si Hive est indisponible.
+# =============================================================================
+
+services:
+  hive:
+    image: apache/hive:3.1.3
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    environment:
+      SERVICE_NAME: hiveserver2
+      SERVICE_OPTS: -Dhive.server2.authentication=NOSASL
+    volumes:
+      - hive-warehouse:/opt/hive/data/warehouse
+
+volumes:
+  hive-warehouse:
+
+# Aucun volume persistant nécessaire (Hive est utilisé en lecture simulée)

@@ -1,0 +1,40 @@
+# =============================================================================
+# ArnaqueRadar — Dépendances Python 3.11+
+# =============================================================================
+
+# --- Collecte ---
+requests==2.31.0
+beautifulsoup4==4.12.3
+
+# --- Traitement des données ---
+pandas==2.2.2
+
+# --- Base de données ---
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+
+# --- Big Data Hive (connecteur sans SASL — compatible Windows sans compilateur C++) ---
+# Note : pyhive[hive] nécessite thrift mais PAS thrift-sasl pour HiveServer2 sans auth Kerberos.
+# Sur Windows, thrift-sasl requiert Microsoft C++ Build Tools (non inclus ici).
+# Pour activer le support Hive complet avec Kerberos : pip install thrift-sasl
+# pyhive sans l'extra [hive] pour éviter la dépendance C++ sasl sous Windows.
+# Sur Linux/Mac en production : pip install "pyhive[hive]==0.7.0" thrift-sasl
+pyhive==0.7.0
+thrift==0.16.0
+# thrift-sasl==0.4.3  # Décommenter si Microsoft C++ Build Tools est installé
+
+# --- API REST ---
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
+
+# --- Tests ---
+pytest==8.2.0
+httpx==0.27.0
+
+# --- Configuration ---
+python-dotenv==1.0.1
+
+# --- Sécurité ---
+passlib[bcrypt]==1.7.4

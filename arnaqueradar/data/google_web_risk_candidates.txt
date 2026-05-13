@@ -1,0 +1,7 @@
+# Liste d'URLs candidates a verifier via Google Web Risk.
+# Le connecteur Source 1 appelle l'API Lookup URL par URL et ne conserve
+# que les URLs classees SOCIAL_ENGINEERING.
+#
+# Remplacez ces exemples par vos propres URLs candidates :
+# https://exemple-phishing.test/login
+# https://exemple-colis.test/suivi

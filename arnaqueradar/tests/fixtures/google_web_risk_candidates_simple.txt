@@ -1,0 +1,2 @@
+https://phish.test/login
+https://safe.example/home
