@@ -108,12 +108,26 @@ Cette migration crée les tables, les index et insère les données de référen
 
 ---
 
-## 6. Démarrer Apache Hive (optionnel)
+## 6. Démarrer Apache Hive et Hue (optionnel)
 
 Hive est la source Big Data (Source 5). Le pipeline fonctionne **sans Hive** grâce
-au fallback automatique (10 entrées simulées réalistes). Pour activer Hive réellement :
+au fallback automatique. Pour activer Hive réellement et ouvrir une interface web
+de consultation via Hue :
 
 ```bash
+docker compose up -d
+```
+
+Ensuite :
+
+- HiveServer2 écoute sur `localhost:10000` pour `pyhive` et `beeline`
+- l'interface Hive/Hue est disponible sur `http://localhost:8888`
+- au premier accès Hue, créez simplement votre compte local d'administration
+
+Si vous venez d'ajouter Hue sur une stack Docker déjà existante, recréez-la :
+
+```bash
+docker compose down
 docker compose up -d
 ```
 

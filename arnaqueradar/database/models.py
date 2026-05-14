@@ -173,6 +173,12 @@ class SignalementHistorique(Base):
     date_signalement: Mapped[date] = mapped_column(Date, nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="pg_history")
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    canal: Mapped[str] = mapped_column(String(30), nullable=False, default="web")
+    statut_traitement: Mapped[str] = mapped_column(String(30), nullable=False, default="nouveau")
+    description_signalement: Mapped[Optional[str]] = mapped_column(Text)
+    analyste: Mapped[Optional[str]] = mapped_column(String(100))
+    source_interne: Mapped[str] = mapped_column(String(100), nullable=False, default="portail_web")
+    nb_signalements: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     def __repr__(self) -> str:

@@ -2,7 +2,7 @@
 Point d'entree principal du pipeline de collecte ArnaqueRadar (C1).
 
 Ce module orchestre la collecte multi-sources en appelant successivement
-les 5 connecteurs (URLhaus API, Cybermalveillance, CNIL CSV, PostgreSQL,
+les 5 connecteurs (URLhaus API, MalwareTips, CNIL CSV, PostgreSQL,
 Hive). Chaque source est executee dans un bloc try/except independant :
 une source defaillante n'interrompt pas les autres.
 
@@ -60,7 +60,7 @@ def run_collection() -> list[dict]:
 
     all_entries: list[dict] = [] # liste pour stocker toutes les entrees, chaque entree est un dictionnaire.
 
-    # ---- Source 1 : URLhaus API ----
+    # ---- Source 1 : URLhaus (feeds historiques + API recent en secours) ----
     try:
         from collect.sources.urlhaus import collect_urlhaus
 
@@ -70,15 +70,15 @@ def run_collection() -> list[dict]:
     except Exception as exc: # en cas d'erreur, affiche un message d'erreur
         logger.error("Source 1 [URLhaus] : echec inattendu - %s", exc)
 
-    # ---- Source 2 : Cybermalveillance (pages officielles + Atom + fallback CSV) ----
+    # ---- Source 2 : MalwareTips (scraping HTML plafonne a 10k) ----
     try:
-        from collect.sources.cybermalveillance import collect_cybermalveillance # import de la fonction collect_cybermalveillance
+        from collect.sources.malwaretips import collect_malwaretips
 
-        cyber_data = collect_cybermalveillance() # appel de la fonction collect_cybermalveillance
-        logger.info("Source 2 [Cybermalveillance] : %d entrees collectees.", len(cyber_data)) # affiche le nombre d'entrees collectees
-        all_entries.extend(cyber_data) # ajoute les entrees collectees a la liste all_entries
+        malwaretips_data = collect_malwaretips()
+        logger.info("Source 2 [MalwareTips] : %d entrees collectees.", len(malwaretips_data))
+        all_entries.extend(malwaretips_data)
     except Exception as exc: # en cas d'erreur, affiche un message d'erreur
-        logger.error("Source 2 [Cybermalveillance] : echec inattendu - %s", exc) # affiche le message d'erreur avec l'exception
+        logger.error("Source 2 [MalwareTips] : echec inattendu - %s", exc)
 
     # ---- Source 3 : CNIL CSV ----
     try:
@@ -100,7 +100,7 @@ def run_collection() -> list[dict]:
     except Exception as exc:
         logger.error("Source 4 [PostgreSQL] : echec inattendu - %s", exc)
 
-    # ---- Source 5 : Hive Big Data ----
+    # ---- Source 5 : Hive Big Data (bootstrap PhishStats 50k) ----
     try:
         from collect.sources.hive_logs import collect_hive_logs
 

@@ -1,90 +1,85 @@
 """
-Source 4 : PostgreSQL historique — collecte depuis la base de données interne.
+Source 4 : PostgreSQL historique - lecture de signalements internes.
 
-Ce module interroge la table signalements_historique de PostgreSQL pour extraire
-les signalements des 90 derniers jours. Si la table n'existe pas (première
-exécution), elle est créée et alimentée avec 20 entrées de démonstration réalistes.
-
-Connexion : psycopg2, paramètres lus depuis les variables d'environnement.
+Cette source represente une base metier relationnelle deja alimentee par un
+systeme interne de signalements. Le connecteur ne fabrique plus de donnees de
+demonstration : il s'appuie sur la table `signalements_historique`, enrichie
+avec quelques colonnes metier (canal, statut, analyste, nb_signalements,
+source_interne), puis n'extrait que les lignes verifiees et traitees.
 """
 
 import logging
 import os
-from datetime import date, timedelta
 from typing import Any
 
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 
+from collect.classification import classify_signal, join_keywords
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-REGIONS = [
-    "Île-de-France", "Auvergne-Rhône-Alpes", "Bretagne",
-    "Grand Est", "Hauts-de-France", "Normandie",
-    "Nouvelle-Aquitaine", "Occitanie", "Pays de la Loire",
-    "Provence-Alpes-Côte d'Azur",
-]
+CREATE_TABLE_QUERY = """
+    CREATE TABLE IF NOT EXISTS signalements_historique (
+        id                     SERIAL PRIMARY KEY,
+        url                    VARCHAR(2048) NOT NULL,
+        type_arnaque           VARCHAR(50)   NOT NULL,
+        region                 VARCHAR(100),
+        date_signalement       DATE          NOT NULL,
+        source                 VARCHAR(50)   NOT NULL DEFAULT 'pg_history',
+        verified               BOOLEAN       DEFAULT FALSE,
+        canal                  VARCHAR(30)   NOT NULL DEFAULT 'web',
+        statut_traitement      VARCHAR(30)   NOT NULL DEFAULT 'nouveau',
+        description_signalement TEXT,
+        analyste               VARCHAR(100),
+        source_interne         VARCHAR(100)  NOT NULL DEFAULT 'portail_web',
+        nb_signalements        INTEGER       NOT NULL DEFAULT 1,
+        created_at             TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+"""
 
-DEMO_ENTRIES = [
-    ("https://fake-livraison-colissimo.fr/suivi-colis", "phishing", "Île-de-France", 10),
-    ("https://impots-remboursement-2024.fr/formulaire", "phishing", "Auvergne-Rhône-Alpes", 20),
-    ("https://ameli-cpam-validation.net/dossier", "phishing", "Bretagne", 30),
-    ("https://fake-pole-emploi-allocation.com/compte", "phishing", "Grand Est", 15),
-    ("https://prix-energie-edf-remise.fr/offre", "phishing", "Hauts-de-France", 5),
-    ("https://sms-chronopost-faux.net/", "sms_frauduleux", "Normandie", 45),
-    ("https://free-mobile-arnaque-facture.fr", "sms_frauduleux", "Nouvelle-Aquitaine", 8),
-    ("https://sfr-remboursement-fake.com/solde", "sms_frauduleux", "Occitanie", 12),
-    ("https://boursorama-phishing-clone.net", "phishing", "Pays de la Loire", 25),
-    ("https://credit-agricole-securite-compte.fr", "phishing", "Provence-Alpes-Côte d'Azur", 18),
-    ("https://societe-generale-alerte-fraude.net", "phishing", "Île-de-France", 33),
-    ("https://paypal-verification-urgent.fr/confirm", "phishing", "Auvergne-Rhône-Alpes", 7),
-    ("https://amazon-remboursement-commande.fr", "phishing", "Bretagne", 40),
-    ("https://doctolib-arnaque-rdv.fr/annulation", "phishing", "Grand Est", 6),
-    ("https://carte-vitale-renouvellement-fraude.fr", "phishing", "Hauts-de-France", 22),
-    ("https://caisse-retraite-complement.com/dossier", "phishing", "Normandie", 9),
-    ("https://cpf-formation-fraude-2024.net", "fraude_cpf", "Nouvelle-Aquitaine", 50),
-    ("https://compte-cpf-arnaque-demarchage.fr", "fraude_cpf", "Occitanie", 35),
-    ("https://microsoft-support-fraude-tech.net", "faux_support", "Pays de la Loire", 14),
-    ("https://apple-support-icloud-phishing.fr/verify", "phishing", "Provence-Alpes-Côte d'Azur", 11),
+ALTER_TABLE_STATEMENTS = [
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS canal VARCHAR(30) NOT NULL DEFAULT 'web';",
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS statut_traitement VARCHAR(30) NOT NULL DEFAULT 'nouveau';",
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS description_signalement TEXT;",
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS analyste VARCHAR(100);",
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS source_interne VARCHAR(100) NOT NULL DEFAULT 'portail_web';",
+    "ALTER TABLE signalements_historique ADD COLUMN IF NOT EXISTS nb_signalements INTEGER NOT NULL DEFAULT 1;",
+    "CREATE INDEX IF NOT EXISTS idx_hist_date ON signalements_historique (date_signalement);",
+    "CREATE INDEX IF NOT EXISTS idx_hist_status ON signalements_historique (statut_traitement);",
+    "CREATE INDEX IF NOT EXISTS idx_hist_verified ON signalements_historique (verified);",
+    (
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_hist_url_date_source_interne "
+        "ON signalements_historique (url, date_signalement, source_interne);"
+    ),
 ]
 
 EXTRACTION_QUERY = """
-    SELECT url, type_arnaque AS type, region, date_signalement, source
+    SELECT
+        url,
+        type_arnaque AS type,
+        region,
+        date_signalement,
+        source,
+        COALESCE(verified, FALSE) AS verified,
+        COALESCE(canal, 'web') AS canal,
+        COALESCE(description_signalement, '') AS description_signalement,
+        COALESCE(source_interne, 'portail_web') AS source_interne,
+        COALESCE(nb_signalements, 1) AS nb_signalements
     FROM signalements_historique
-    WHERE date_signalement >= NOW() - INTERVAL '90 days'
-"""
-
-CREATE_TABLE_QUERY = """
-    CREATE TABLE IF NOT EXISTS signalements_historique (
-        id               SERIAL PRIMARY KEY,
-        url              VARCHAR(2048) NOT NULL,
-        type_arnaque     VARCHAR(50)   NOT NULL,
-        region           VARCHAR(100),
-        date_signalement DATE          NOT NULL,
-        source           VARCHAR(50)   NOT NULL DEFAULT 'pg_history',
-        verified         BOOLEAN       DEFAULT FALSE,
-        created_at       TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    );
+    WHERE date_signalement >= CURRENT_DATE - INTERVAL '180 days'
+      AND COALESCE(verified, FALSE) = TRUE
+      AND COALESCE(statut_traitement, 'nouveau') IN ('valide', 'confirme')
+    ORDER BY date_signalement DESC, nb_signalements DESC, id DESC
 """
 
 
 def _get_connection():
     """
     Cree une connexion psycopg2 via les parametres individuels PG_*.
-
-    Les parametres sont passes comme arguments keyword a psycopg2.connect(),
-    ce qui evite le bug d'encodage Windows lorsque le mot de passe contient
-    des caracteres speciaux (espaces, accents). Ne jamais passer DATABASE_URL
-    comme chaine brute a psycopg2 sur Windows.
-
-    Retourne :
-        psycopg2.connection : connexion active a PostgreSQL.
-
-    Leve :
-        psycopg2.OperationalError : si la connexion est impossible.
     """
     return psycopg2.connect(
         host=os.getenv("PG_HOST", "localhost"),
@@ -96,88 +91,110 @@ def _get_connection():
     )
 
 
-def _insert_demo_entries(cursor) -> None:
+def _ensure_history_table(cursor) -> None:
     """
-    Insère 20 entrées de démonstration dans signalements_historique.
+    Cree la table historique si besoin et aligne sa structure metier.
+    """
+    cursor.execute(CREATE_TABLE_QUERY)
+    for statement in ALTER_TABLE_STATEMENTS:
+        cursor.execute(statement)
 
-    Paramètres :
-        cursor : curseur psycopg2 actif sur la connexion en cours.
+
+def _build_title(row: dict[str, Any]) -> str:
     """
-    today = date.today()
-    for i, (url, type_arnaque, region, days_ago) in enumerate(DEMO_ENTRIES):
-        d = today - timedelta(days=days_ago)
-        cursor.execute(
-            """
-            INSERT INTO signalements_historique (url, type_arnaque, region, date_signalement, source)
-            VALUES (%s, %s, %s, %s, 'pg_history')
-            ON CONFLICT DO NOTHING
-            """,
-            (url, type_arnaque, region, d),
-        )
-    logger.info("pg_history : 20 entrées de démonstration insérées.")
+    Construit un titre metier lisible pour l'entree issue de PostgreSQL.
+    """
+    description = str(row.get("description_signalement", "") or "").strip()
+    canal = str(row.get("canal", "") or "").strip()
+    source_interne = str(row.get("source_interne", "") or "").strip()
+
+    if description:
+        return description
+
+    parts = ["Historique interne"]
+    if canal:
+        parts.append(f"canal: {canal}")
+    if source_interne:
+        parts.append(f"origine: {source_interne}")
+    return " - ".join(parts)
 
 
 def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
     """
-    Normalise une ligne extraite de PostgreSQL vers le schéma commun.
-
-    Paramètres :
-        row (dict) : ligne issue de psycopg2 RealDictCursor.
-
-    Retourne :
-        dict : entrée normalisée.
+    Normalise une ligne extraite de PostgreSQL vers le schema commun.
     """
     date_val = row.get("date_signalement")
     date_iso = date_val.isoformat() if hasattr(date_val, "isoformat") else str(date_val)
+    raw_type = str(row.get("type", "autre") or "autre").strip().lower()
+    canal = str(row.get("canal", "") or "").strip()
+    description = str(row.get("description_signalement", "") or "").strip()
+    source_interne = str(row.get("source_interne", "") or "").strip()
+    region = str(row.get("region", "") or "").strip()
+    url = str(row.get("url", "")).strip().rstrip("/")
+    classification = classify_signal(
+        [url, raw_type, description, source_interne, region],
+        seed_type=raw_type,
+        seed_canal=canal,
+        type_raw=raw_type,
+        source_category_raw=source_interne,
+        score_override=0.95,
+        classifier_version="pg_history_rules_v2",
+    )
     return {
-        "url": str(row.get("url", "")).strip().rstrip("/"),
-        "type": str(row.get("type", "autre")),
+        "url": url,
+        "type": classification["type"],
         "source": "pg_history",
         "date_signalement": date_iso,
-        "region": str(row.get("region", "")),
+        "region": region,
+        "verified": bool(row.get("verified", False)),
+        "nb_signalements": int(row.get("nb_signalements", 1) or 1),
+        "titre": _build_title(row),
+        "canal": classification["canal"],
+        "source_interne": source_interne,
+        "nature_technique": classification["nature_technique"],
+        "score_confiance": classification["score_confiance"],
+        "type_raw": classification["type_raw"],
+        "source_category_raw": classification["source_category_raw"],
+        "keywords_matched": join_keywords(classification["keywords_matched"]),
+        "classifier_version": classification["classifier_version"],
     }
 
 
 def collect_pg_history() -> list[dict[str, Any]]:
     """
-    Extrait les signalements des 90 derniers jours depuis PostgreSQL.
+    Extrait les signalements historiques internes depuis PostgreSQL.
 
-    Si la table signalements_historique n'existe pas, elle est créée et
-    alimentée avec des données de démonstration avant l'extraction.
-    La connexion est toujours fermée dans un bloc finally.
-
-    Retourne :
-        list[dict] : liste des signalements normalisés, ou liste vide si
-                     la connexion à PostgreSQL est impossible.
+    Le connecteur lit uniquement les lignes metier exploitablees :
+    - verifiees
+    - traitees (`valide` / `confirme`)
+    - datant des 180 derniers jours
     """
     conn = None
     try:
         conn = _get_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-            # Créer la table si elle n'existe pas (première exécution)
-            cursor.execute(CREATE_TABLE_QUERY)
+            _ensure_history_table(cursor)
             conn.commit()
-
-            # Vérifier si la table est vide pour y insérer les données de démo
-            cursor.execute("SELECT COUNT(*) AS cnt FROM signalements_historique;")
-            count = cursor.fetchone()["cnt"]
-            if count == 0:
-                logger.info("pg_history : table vide, insertion des données de démonstration.")
-                _insert_demo_entries(cursor)
-                conn.commit()
 
             cursor.execute(EXTRACTION_QUERY)
             rows = cursor.fetchall()
 
         results = [_normalize_row(dict(row)) for row in rows]
+        if not results:
+            logger.warning(
+                "pg_history : aucun signalement historique valide trouve. "
+                "Alimentez la table via pgAdmin4 pour activer la source 4."
+            )
+            return []
+
         logger.info("pg_history : %d signalements extraits.", len(results))
         return results
 
     except psycopg2.OperationalError as exc:
-        logger.error("pg_history : connexion PostgreSQL impossible — %s", exc)
+        logger.error("pg_history : connexion PostgreSQL impossible - %s", exc)
         return []
     except psycopg2.Error as exc:
-        logger.error("pg_history : erreur SQL — %s", exc)
+        logger.error("pg_history : erreur SQL - %s", exc)
         return []
     finally:
         if conn is not None:

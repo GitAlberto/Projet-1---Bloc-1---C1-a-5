@@ -22,6 +22,8 @@ from typing import Any
 import pandas as pd
 from dotenv import load_dotenv
 
+from collect.classification import join_keywords
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -300,8 +302,30 @@ def _normalize_dataframe(df: pd.DataFrame) -> list[dict[str, Any]]:
     df_norm["type"] = "violation_rgpd"
     df_norm["source"] = "cnil_csv"
     df_norm["titre"] = df_norm.get("titre", pd.Series(["Violation RGPD"] * len(df_norm)))
+    df_norm["region"] = df_norm.get("region", pd.Series([""] * len(df_norm))).fillna("")
+    df_norm["canal"] = "fuite_donnees"
+    df_norm["nature_technique"] = "data_breach"
+    df_norm["score_confiance"] = 0.99
+    df_norm["type_raw"] = df_norm.get("titre", pd.Series([""] * len(df_norm))).fillna("")
+    df_norm["source_category_raw"] = "cnil_open_data"
+    df_norm["keywords_matched"] = df_norm["type_raw"].apply(join_keywords)
+    df_norm["classifier_version"] = "cnil_rules_v2"
 
-    fields = ["url", "type", "source", "date_signalement", "titre"]
+    fields = [
+        "url",
+        "type",
+        "source",
+        "date_signalement",
+        "titre",
+        "region",
+        "canal",
+        "nature_technique",
+        "score_confiance",
+        "type_raw",
+        "source_category_raw",
+        "keywords_matched",
+        "classifier_version",
+    ]
     for field in fields:
         if field not in df_norm.columns:
             df_norm[field] = ""
