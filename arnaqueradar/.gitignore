@@ -35,3 +35,9 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Dossiers pytest-cache
+.pytest-cache/
+
+# Dossiers de tests générés par pytest-autodoc
+pytest-cache-files*/    

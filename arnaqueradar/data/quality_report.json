@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-05-14T18:18:04.032914+00:00",
+  "total_rows": 62909,
+  "targets": {
+    "autre_global_max_pct": 15.0,
+    "autre_by_source_max_pct": 25.0,
+    "score_confiance_min_for_review": 0.6,
+    "min_rows_for_source_alert": 100
+  },
+  "type_distribution": {
+    "violation_rgpd": 32647,
+    "malware_distribution": 19597,
+    "arnaque_achat": 6325,
+    "sms_frauduleux": 1123,
+    "phishing": 1072,
+    "faux_support": 1064,
+    "fraude_cpf": 1051,
+    "autre": 30
+  },
+  "nature_distribution": {
+    "data_breach": 32647,
+    "malware": 19597,
+    "ecommerce_fraud": 6325,
+    "social_engineering": 1123,
+    "phishing": 1072,
+    "support_fraud": 1064,
+    "identity_fraud": 1051,
+    "autre": 30
+  },
+  "autre_global_pct": 0.05,
+  "autre_by_source": {
+    "cnil_csv": {
+      "rows": 32629,
+      "autre_pct": 0.0
+    },
+    "hive_logs": {
+      "rows": 31,
+      "autre_pct": 96.77
+    },
+    "malwaretips": {
+      "rows": 10000,
+      "autre_pct": 0.0
+    },
+    "pg_history": {
+      "rows": 5250,
+      "autre_pct": 0.0
+    },
+    "urlhaus": {
+      "rows": 14999,
+      "autre_pct": 0.0
+    }
+  },
+  "region_vide_global_pct": 91.65,
+  "region_vide_by_source": {
+    "cnil_csv": {
+      "rows": 32629,
+      "region_vide_pct": 100.0
+    },
+    "hive_logs": {
+      "rows": 31,
+      "region_vide_pct": 100.0
+    },
+    "malwaretips": {
+      "rows": 10000,
+      "region_vide_pct": 100.0
+    },
+    "pg_history": {
+      "rows": 5250,
+      "region_vide_pct": 0.0
+    },
+    "urlhaus": {
+      "rows": 14999,
+      "region_vide_pct": 100.0
+    }
+  },
+  "sans_signal_exploitable_global_pct": 0.05,
+  "sans_signal_exploitable_by_source": {
+    "cnil_csv": {
+      "rows": 32629,
+      "sans_signal_exploitable_pct": 0.0
+    },
+    "hive_logs": {
+      "rows": 31,
+      "sans_signal_exploitable_pct": 96.77
+    },
+    "malwaretips": {
+      "rows": 10000,
+      "sans_signal_exploitable_pct": 0.0
+    },
+    "pg_history": {
+      "rows": 5250,
+      "sans_signal_exploitable_pct": 0.0
+    },
+    "urlhaus": {
+      "rows": 14999,
+      "sans_signal_exploitable_pct": 0.0
+    }
+  },
+  "score_confiance_moyen_global": 0.889,
+  "score_confiance_moyen_par_type": {
+    "arnaque_achat": 0.86,
+    "autre": 0.35,
+    "faux_support": 0.948,
+    "fraude_cpf": 0.95,
+    "malware_distribution": 0.717,
+    "phishing": 0.947,
+    "sms_frauduleux": 0.94,
+    "violation_rgpd": 0.99
+  },
+  "score_confiance_moyen_par_source": {
+    "cnil_csv": 0.99,
+    "hive_logs": 0.361,
+    "malwaretips": 0.767,
+    "pg_history": 0.95,
+    "urlhaus": 0.729
+  },
+  "alerts": []
+}

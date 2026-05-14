@@ -116,7 +116,7 @@ def get_db_session() -> Session:
 
 
 VALID_TYPES = {
-    "phishing", "sms_frauduleux", "violation_rgpd",
+    "phishing", "malware_distribution", "sms_frauduleux", "violation_rgpd",
     "fraude_cpf", "arnaque_achat", "faux_support", "autre",
 }
 

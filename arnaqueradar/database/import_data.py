@@ -36,6 +36,7 @@ CSV_PATH = PROJECT_ROOT / "data" / "clean_dataset.csv"
 # Mapping du vocabulaire contrôlé vers les codes des types connus
 TYPE_CODE_MAP: dict[str, str] = {
     "phishing": "phishing",
+    "malware_distribution": "malware_distribution",
     "sms_frauduleux": "sms_frauduleux",
     "violation_rgpd": "violation_rgpd",
     "fraude_cpf": "fraude_cpf",
@@ -44,12 +45,48 @@ TYPE_CODE_MAP: dict[str, str] = {
     "autre": "autre",
 }
 
+TYPE_REFERENCE_ROWS: dict[str, tuple[str, str]] = {
+    "phishing": (
+        "Hameconnage",
+        "Tentative de vol de donnees via un faux site ou email",
+    ),
+    "malware_distribution": (
+        "Distribution de malware",
+        "URL malveillante diffusant un executable, chargeur ou payload technique",
+    ),
+    "sms_frauduleux": (
+        "SMS frauduleux",
+        "Smishing : arnaque par SMS (faux transporteur, impots, etc.)",
+    ),
+    "violation_rgpd": (
+        "Violation RGPD",
+        "Fuite ou traitement illicite de donnees personnelles",
+    ),
+    "fraude_cpf": (
+        "Fraude CPF",
+        "Usurpation du compte formation professionnel",
+    ),
+    "arnaque_achat": (
+        "Arnaque a l'achat",
+        "Faux vendeur, produit non livre sur plateforme de vente",
+    ),
+    "faux_support": (
+        "Faux support technique",
+        "Escroquerie au faux conseiller bancaire ou informatique",
+    ),
+    "autre": (
+        "Autre",
+        "Arnaque ne correspondant pas aux categories ci-dessus",
+    ),
+}
+
 SOURCE_CODE_MAP: dict[str, str] = {
     "urlhaus": "urlhaus",
     "google_web_risk": "google_web_risk",
     "openphish": "openphish",
     "phishtank": "phishtank",
     "cybermalveillance": "cybermalveillance",
+    "malwaretips": "malwaretips",
     "cnil_csv": "cnil_csv",
     "pg_history": "pg_history",
     "hive_logs": "hive_logs",
@@ -81,6 +118,11 @@ SOURCE_REFERENCE_ROWS: dict[str, tuple[str, str | None, str]] = {
         "https://www.cybermalveillance.gouv.fr",
         "scraping",
     ),
+    "malwaretips": (
+        "MalwareTips Scam Reports",
+        "https://malwaretips.com/blogs/category/scam-reports/",
+        "scraping",
+    ),
     "cnil_csv": (
         "CNIL Open Data",
         "https://data.gouv.fr",
@@ -97,6 +139,16 @@ SOURCE_REFERENCE_ROWS: dict[str, tuple[str, str | None, str]] = {
         "bigdata",
     ),
 }
+
+SIGNAL_ENRICHMENT_ALTERS = [
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS canal VARCHAR(30);",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS nature_technique VARCHAR(50);",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS score_confiance NUMERIC(4,3);",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS type_raw VARCHAR(100);",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS source_category_raw VARCHAR(255);",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS keywords_matched TEXT;",
+    "ALTER TABLE signalements ADD COLUMN IF NOT EXISTS classifier_version VARCHAR(50);",
+]
 
 
 def _get_connection():
@@ -173,6 +225,33 @@ def _ensure_source_reference_rows(cursor, sources_map: dict) -> dict:
     return {row["code"]: row["id"] for row in cursor.fetchall()}
 
 
+def _ensure_type_reference_rows(cursor, types_map: dict) -> dict:
+    """Insere les types metier manquants puis recharge le mapping."""
+    missing_codes = [code for code in TYPE_REFERENCE_ROWS if code not in types_map]
+    if not missing_codes:
+        return types_map
+
+    for code in missing_codes:
+        libelle, description = TYPE_REFERENCE_ROWS[code]
+        cursor.execute(
+            """
+            INSERT INTO types_arnaque (code, libelle, description)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (code) DO NOTHING
+            """,
+            (code, libelle, description),
+        )
+
+    cursor.execute("SELECT id, code FROM types_arnaque;")
+    return {row["code"]: row["id"] for row in cursor.fetchall()}
+
+
+def _ensure_signalements_enrichment_columns(cursor) -> None:
+    """Ajoute les colonnes d'enrichissement si la base ne les a pas encore."""
+    for statement in SIGNAL_ENRICHMENT_ALTERS:
+        cursor.execute(statement)
+
+
 def _resolve_region_id(region_raw: str, regions_map: dict) -> int | None:
     """
     Résout l'ID de région depuis un nom brut, avec correspondance souple.
@@ -187,6 +266,42 @@ def _resolve_region_id(region_raw: str, regions_map: dict) -> int | None:
     if not region_raw or str(region_raw) in ("nan", ""):
         return regions_map.get("inconnue")
     return regions_map.get(str(region_raw).strip().lower(), regions_map.get("inconnue"))
+
+
+def _coerce_text(value) -> str | None:
+    """Nettoie un texte CSV pandas en gérant proprement les NaN."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text.lower() == "nan" or text == "":
+        return None
+    return text
+
+
+def _coerce_bool(value) -> bool:
+    """Interprète les booléens CSV/pandas sans considérer NaN comme True."""
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    return text in {"1", "true", "vrai", "yes", "oui"}
+
+
+def _coerce_int(value, default: int = 1) -> int:
+    """Convertit un nombre CSV vers un entier positif."""
+    try:
+        parsed = int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def _coerce_float(value, default: float | None = None) -> float | None:
+    """Convertit un score CSV vers un flottant borné dans [0, 1]."""
+    try:
+        parsed = float(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+    return round(min(max(parsed, 0.0), 1.0), 3)
 
 
 def import_clean_data() -> tuple[int, int]:
@@ -205,7 +320,7 @@ def import_clean_data() -> tuple[int, int]:
         logger.error("Fichier introuvable : %s — exécutez d'abord aggregate.py.", CSV_PATH)
         return 0, 0
 
-    df = pd.read_csv(CSV_PATH, encoding="utf-8")
+    df = pd.read_csv(CSV_PATH, encoding="utf-8", low_memory=False)
     logger.info("import_data : %d lignes lues depuis %s.", len(df), CSV_PATH)
 
     conn = None
@@ -215,7 +330,9 @@ def import_clean_data() -> tuple[int, int]:
     try:
         conn = _get_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            _ensure_signalements_enrichment_columns(cursor)
             types_map, regions_map, sources_map = _load_lookup_tables(cursor)
+            types_map = _ensure_type_reference_rows(cursor, types_map)
             sources_map = _ensure_source_reference_rows(cursor, sources_map)
             conn.commit()
 
@@ -239,8 +356,16 @@ def import_clean_data() -> tuple[int, int]:
 
                     url = str(row.get("url", "")).strip()
                     date_sig = str(row.get("date_signalement", "")).strip()
-                    titre = str(row.get("titre", "")) if "titre" in row else None
-                    verified = bool(row.get("verified", False))
+                    titre = _coerce_text(row.get("titre", None)) if "titre" in row else None
+                    verified = _coerce_bool(row.get("verified", False))
+                    nb_signalements = _coerce_int(row.get("nb_signalements", 1), default=1)
+                    canal = _coerce_text(row.get("canal", None))
+                    nature_technique = _coerce_text(row.get("nature_technique", None))
+                    score_confiance = _coerce_float(row.get("score_confiance", None), default=None)
+                    type_raw = _coerce_text(row.get("type_raw", None))
+                    source_category_raw = _coerce_text(row.get("source_category_raw", None))
+                    keywords_matched = _coerce_text(row.get("keywords_matched", None))
+                    classifier_version = _coerce_text(row.get("classifier_version", None))
 
                     if not url or not date_sig or date_sig in ("nan", ""):
                         nb_err += 1
@@ -249,14 +374,33 @@ def import_clean_data() -> tuple[int, int]:
                     cursor.execute(
                         """
                         INSERT INTO signalements
-                            (url, type_id, region_id, source_id, date_signalement, verified, titre)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            (
+                                url, type_id, region_id, source_id, date_signalement, verified,
+                                titre, nb_signalements, canal, nature_technique, score_confiance,
+                                type_raw, source_category_raw, keywords_matched, classifier_version
+                            )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT ON CONSTRAINT uq_signalement_url_date DO NOTHING
                         """,
-                        (url, type_id, region_id, source_id, date_sig, verified,
-                         None if titre in ("nan", "", None) else titre),
+                        (
+                            url,
+                            type_id,
+                            region_id,
+                            source_id,
+                            date_sig,
+                            verified,
+                            titre,
+                            nb_signalements,
+                            canal,
+                            nature_technique,
+                            score_confiance,
+                            type_raw,
+                            source_category_raw,
+                            keywords_matched,
+                            classifier_version,
+                        ),
                     )
-                    nb_ok += 1
+                    nb_ok += max(cursor.rowcount, 0)
 
                 except psycopg2.Error as exc:
                     logger.error("Ligne %d : erreur SQL — %s", idx, exc)
