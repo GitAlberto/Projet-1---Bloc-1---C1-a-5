@@ -8,7 +8,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from collect.sources import pg_history
+from pipeline.collect.sources import pg_history
 
 
 def test_build_title_prefers_description():
@@ -52,3 +52,10 @@ def test_extraction_query_filters_verified_and_validated_rows():
     assert "COALESCE(verified, FALSE) = TRUE" in query
     assert "IN ('valide', 'confirme')" in query
     assert "CURRENT_DATE - INTERVAL '180 days'" in query
+
+
+def test_required_history_columns_cover_runtime_expectations():
+    """La source 4 doit expliciter le schema attendu au lieu de le muter a chaud."""
+    assert "description_signalement" in pg_history.REQUIRED_HISTORY_COLUMNS
+    assert "source_interne" in pg_history.REQUIRED_HISTORY_COLUMNS
+    assert "nb_signalements" in pg_history.REQUIRED_HISTORY_COLUMNS

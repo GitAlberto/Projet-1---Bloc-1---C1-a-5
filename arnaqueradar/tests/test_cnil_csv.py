@@ -13,7 +13,7 @@ import uuid
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from collect.sources import cnil_csv
+from pipeline.collect.sources import cnil_csv
 
 
 def _make_workspace_dir() -> Path:

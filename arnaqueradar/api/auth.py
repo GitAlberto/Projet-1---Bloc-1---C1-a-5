@@ -15,13 +15,14 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-load_dotenv()
+from bootstrap import load_project_env
+
+load_project_env()
 
 logger = logging.getLogger(__name__)
 

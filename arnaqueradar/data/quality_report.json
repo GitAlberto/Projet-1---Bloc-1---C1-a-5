@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-14T18:18:04.032914+00:00",
-  "total_rows": 62909,
+  "generated_at": "2026-05-15T21:40:39.634880+00:00",
+  "total_rows": 65507,
   "targets": {
     "autre_global_max_pct": 15.0,
     "autre_by_source_max_pct": 25.0,
@@ -8,34 +8,32 @@
     "min_rows_for_source_alert": 100
   },
   "type_distribution": {
-    "violation_rgpd": 32647,
-    "malware_distribution": 19597,
-    "arnaque_achat": 6325,
-    "sms_frauduleux": 1123,
-    "phishing": 1072,
-    "faux_support": 1064,
-    "fraude_cpf": 1051,
-    "autre": 30
+    "violation_rgpd": 32648,
+    "malware_distribution": 22175,
+    "arnaque_achat": 6336,
+    "sms_frauduleux": 1134,
+    "faux_support": 1089,
+    "phishing": 1074,
+    "fraude_cpf": 1051
   },
   "nature_distribution": {
-    "data_breach": 32647,
-    "malware": 19597,
-    "ecommerce_fraud": 6325,
-    "social_engineering": 1123,
-    "phishing": 1072,
-    "support_fraud": 1064,
-    "identity_fraud": 1051,
-    "autre": 30
+    "data_breach": 32648,
+    "malware": 22175,
+    "ecommerce_fraud": 6336,
+    "social_engineering": 1134,
+    "support_fraud": 1089,
+    "phishing": 1074,
+    "identity_fraud": 1051
   },
-  "autre_global_pct": 0.05,
+  "autre_global_pct": 0.0,
   "autre_by_source": {
     "cnil_csv": {
       "rows": 32629,
       "autre_pct": 0.0
     },
     "hive_logs": {
-      "rows": 31,
-      "autre_pct": 96.77
+      "rows": 2629,
+      "autre_pct": 0.0
     },
     "malwaretips": {
       "rows": 10000,
@@ -50,14 +48,14 @@
       "autre_pct": 0.0
     }
   },
-  "region_vide_global_pct": 91.65,
+  "region_vide_global_pct": 91.99,
   "region_vide_by_source": {
     "cnil_csv": {
       "rows": 32629,
       "region_vide_pct": 100.0
     },
     "hive_logs": {
-      "rows": 31,
+      "rows": 2629,
       "region_vide_pct": 100.0
     },
     "malwaretips": {
@@ -73,15 +71,15 @@
       "region_vide_pct": 100.0
     }
   },
-  "sans_signal_exploitable_global_pct": 0.05,
+  "sans_signal_exploitable_global_pct": 0.0,
   "sans_signal_exploitable_by_source": {
     "cnil_csv": {
       "rows": 32629,
       "sans_signal_exploitable_pct": 0.0
     },
     "hive_logs": {
-      "rows": 31,
-      "sans_signal_exploitable_pct": 96.77
+      "rows": 2629,
+      "sans_signal_exploitable_pct": 0.0
     },
     "malwaretips": {
       "rows": 10000,
@@ -96,20 +94,19 @@
       "sans_signal_exploitable_pct": 0.0
     }
   },
-  "score_confiance_moyen_global": 0.889,
+  "score_confiance_moyen_global": 0.88,
   "score_confiance_moyen_par_type": {
-    "arnaque_achat": 0.86,
-    "autre": 0.35,
-    "faux_support": 0.948,
+    "arnaque_achat": 0.861,
+    "faux_support": 0.947,
     "fraude_cpf": 0.95,
-    "malware_distribution": 0.717,
+    "malware_distribution": 0.712,
     "phishing": 0.947,
-    "sms_frauduleux": 0.94,
+    "sms_frauduleux": 0.939,
     "violation_rgpd": 0.99
   },
   "score_confiance_moyen_par_source": {
     "cnil_csv": 0.99,
-    "hive_logs": 0.361,
+    "hive_logs": 0.671,
     "malwaretips": 0.767,
     "pg_history": 0.95,
     "urlhaus": 0.729

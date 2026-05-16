@@ -28,8 +28,8 @@
 └─────────────────────────────────────────────────────────────────┘
 
    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-   │ URLhaus API  │  │Cybermalveil. │  │   CNIL CSV   │
-   │ (Recent URLs)│  │  (Scraping)  │  │  (Fichier)   │
+   │ URLhaus API  │  │ MalwareTips  │  │   CNIL CSV   │
+   │ (Feeds+API)  │  │  (Scraping)  │  │  (Open Data) │
    └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
           │                 │                  │
    ┌──────┴───────┐  ┌──────┴───────┐
@@ -40,18 +40,19 @@
           └────────┬────────┘
                    │
           ┌────────▼────────┐
-          │ collecter.py    │   ← C1 : Collecte multi-sources
-          │  (Orchestrateur)│
+          │ pipeline/collect│   ← C1 : Collecte multi-sources
+          │ /1_collecter.py │
           └────────┬────────┘
                    │  raw_YYYYMMDD_HHMMSS.json
           ┌────────▼────────┐
-          │  aggregate.py   │   ← C2 : Nettoyage / Normalisation
-          │  (8 étapes)     │
+          │ 2 → 4 pipeline  │   ← C2 : Nettoyage / Enrichissement / Qualité
+          │ (nettoyer,      │
+          │ enrichir, QA)   │
           └────────┬────────┘
-                   │  clean_dataset.csv
+          │  clean_dataset.csv
           ┌────────▼────────┐
-          │  import_data.py │   ← C3 : Stockage PostgreSQL
-          │  (psycopg2)     │
+          │ pipeline/databas│   ← C3 : Stockage PostgreSQL consolidé
+          │ e/5_importer.py │
           └────────┬────────┘
                    │
           ┌────────▼────────┐
@@ -63,8 +64,8 @@
           │  pytest tests/  │   ← C5 : Tests d'intégration
           └─────────────────┘
 
-  Stockage Big Data : Apache Hive (HiveServer2)
-  Base relationnelle : PostgreSQL 15 (Docker)
+  Stockage Big Data : Apache Hive (HiveServer2) + Hue
+  Base relationnelle : PostgreSQL 15
   Sécurité : JWT Bearer / OWASP headers / Validation Pydantic
   RGPD : Registre → docs/rgpd_registre.md
 ```
@@ -75,11 +76,26 @@
 
 | Code | Compétence | Fichiers principaux |
 |---|---|---|
-| **C1** | Collecter des données depuis sources hétérogènes | `collect/collecter.py`, `collect/sources/` |
-| **C2** | Nettoyer et normaliser les données | `aggregate/aggregate.py` |
-| **C3** | Stocker les données en base relationnelle | `database/models.py`, `database/import_data.py`, `database/migrations/` |
+| **C1** | Collecter des données depuis sources hétérogènes | `pipeline/collect/1_collecter.py`, `pipeline/collect/sources/` |
+| **C2** | Nettoyer, enrichir et contrôler la qualité | `pipeline/aggregate/2_nettoyer.py`, `pipeline/aggregate/3_enrichir.py`, `pipeline/aggregate/4_controler_qualite.py`, `pipeline/aggregate/aggregate.py` |
+| **C3** | Stocker les données consolidées et les evidences en base | `pipeline/database/5_importer.py`, `pipeline/database/models.py`, `pipeline/database/import_data.py`, `pipeline/database/migrations/` |
 | **C4** | Exposer les données via une API REST sécurisée | `api/main.py`, `api/auth.py`, `api/schemas.py` |
-| **C5** | Tester et valider le pipeline | `tests/test_api.py` |
+| **C5** | Tester et valider le pipeline | `tests/`, `pipeline/7_pipeline_complet.py` |
+
+---
+
+## Modèle de données
+
+Le stockage PostgreSQL distingue maintenant deux grains complémentaires :
+
+- `signalements` : une ligne consolidée par couple `(url, date_signalement)`
+- `signalement_sources` : les evidences source par source qui corroborent un signalement
+
+Cette séparation permet :
+
+- de garder une API simple côté consultation
+- de ne plus perdre la provenance multi-sources
+- d'alimenter un reporting et un futur machine learning avec les preuves détaillées
 
 ---
 
@@ -94,21 +110,23 @@ pip install -r requirements.txt
 # 2. Configurer
 cp .env.example .env  # Éditer SECRET_KEY et ADMIN_PASSWORD
 
-# 3. Démarrer PostgreSQL
+# 3. Démarrer Hive
 docker compose up -d
 
-# 4. Initialiser la base
-psql postgresql://postgres:Mot%20de%20passe@localhost:5433/arnaqueradar -f database/migrations/001_init.sql
+# 4. Initialiser la base PostgreSQL locale
+psql postgresql://postgres:VOTRE_MOT_DE_PASSE@localhost/arnaqueradar -f pipeline/database/migrations/001_init.sql
+psql postgresql://postgres:VOTRE_MOT_DE_PASSE@localhost/arnaqueradar -f pipeline/database/migrations/002_align_runtime_schema.sql
 
-# 5. Exécuter le pipeline complet
-python collect/collecter.py
-python aggregate/aggregate.py
-python database/import_data.py
+# 5. Charger Hive avec PhishStats (une fois, ou à la demande)
+python -m collect.bootstrap_hive_phishstats --target 50000
 
-# 6. Lancer l'API
+# 6. Exécuter le pipeline complet
+python pipeline/7_pipeline_complet.py
+
+# 7. Lancer l'API
 uvicorn api.main:app --reload --port 8000
 
-# 7. Tester
+# 8. Tester
 pytest tests/ -v
 ```
 
@@ -124,5 +142,5 @@ pytest tests/ -v
 - **pandas** — traitement et nettoyage des données
 - **BeautifulSoup4** — scraping HTML
 - **python-jose** — JWT / authentification
-- **Docker Compose** — infrastructure locale (PostgreSQL + Hive)
+- **Docker Compose** — infrastructure locale (Hive, metastore, Hue)
 - **pytest + httpx** — tests d'intégration

@@ -8,7 +8,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from aggregate.aggregate import aggregate_sources, build_other_review_sample, build_quality_report
+from pipeline.aggregate.aggregate import aggregate_sources, build_other_review_sample, build_quality_report
 
 
 def test_aggregate_sources_preserves_enrichment_fields():
@@ -45,6 +45,33 @@ def test_aggregate_sources_preserves_enrichment_fields():
     assert row["keywords_matched"] == "login|mailbox"
     assert row["nb_signalements"] == 4
     assert bool(row["verified"]) is True
+
+
+def test_aggregate_sources_keeps_multi_source_corroboration():
+    """Deux sources sur la meme URL/date ne doivent plus etre ecrasees au nettoyage."""
+    raw_data = [
+        {
+            "url": "https://same.example/login",
+            "type": "phishing",
+            "source": "urlhaus",
+            "source_interne": "",
+            "type_raw": "phish",
+            "date_signalement": "2026-05-14",
+        },
+        {
+            "url": "https://same.example/login",
+            "type": "phishing",
+            "source": "malwaretips",
+            "source_interne": "",
+            "type_raw": "scam-report",
+            "date_signalement": "2026-05-14",
+        },
+    ]
+
+    df = aggregate_sources(raw_data)
+
+    assert len(df) == 2
+    assert set(df["source"]) == {"urlhaus", "malwaretips"}
 
 
 def test_quality_report_flags_too_many_other_rows():
@@ -88,3 +115,32 @@ def test_quality_report_flags_too_many_other_rows():
     assert "urlhaus" in report["autre_by_source"]
     assert len(sample) == 2
     assert set(sample["source"]) == {"urlhaus"}
+
+
+def test_aggregate_sources_filters_low_quality_hive_autre_rows():
+    """Les lignes Hive restant en 'autre' doivent etre exclues du dataset final enrichi."""
+    raw_data = [
+        {
+            "url": "http://195.177.94.68:34541/t/kswpad",
+            "type": "autre",
+            "source": "hive_logs",
+            "date_signalement": "2026-05-14",
+            "nature_technique": "autre",
+            "score_confiance": 0.22,
+            "keywords_matched": "",
+        },
+        {
+            "url": "https://bank.example/login",
+            "type": "phishing",
+            "source": "urlhaus",
+            "date_signalement": "2026-05-14",
+            "nature_technique": "phishing",
+            "score_confiance": 0.91,
+            "keywords_matched": "login|verify",
+        },
+    ]
+
+    df = aggregate_sources(raw_data)
+
+    assert len(df) == 1
+    assert set(df["source"]) == {"urlhaus"}

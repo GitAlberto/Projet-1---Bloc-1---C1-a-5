@@ -1,0 +1,33 @@
+# =============================================================================
+# Git ignore racine - ArnaqueRadar
+#
+# Ce fichier couvre les artefacts situes a la racine du workspace :
+# - caches pytest
+# - donnees externes telechargees
+# - artefacts runtime Docker/Hue
+# - exports generes par le pipeline
+# =============================================================================
+
+# Donnees externes / caches racine
+data_CNIL/
+pytest-cache-files*/
+
+# Artefacts runtime / exports du projet
+arnaqueradar/data/raw_*.json
+arnaqueradar/data/clean_dataset.csv
+arnaqueradar/data/2_dataset_nettoye.csv
+arnaqueradar/data/3_dataset_enrichi.csv
+arnaqueradar/data/6_dataset_ml.csv
+arnaqueradar/data/quality_report.json
+arnaqueradar/data/quality_review_autre_sample.csv
+arnaqueradar/data/hive_phishstats_cache.json
+
+# Hue / Docker runtime
+arnaqueradar/docker/hue/data/
+
+# Python
+arnaqueradar/.pytest_cache/
+arnaqueradar/__pycache__/
+arnaqueradar/**/__pycache__/
+arnaqueradar/venv/
+arnaqueradar/.venv/
