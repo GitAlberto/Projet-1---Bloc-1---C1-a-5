@@ -3,8 +3,8 @@
 <configuration>
   <!--
     Autorise l'utilisateur technique Hue a proxifier les utilisateurs
-    applicatifs dans cette stack locale Docker.
-    Necessaire car Hue envoie toujours hive.server2.proxy.user pour l'editeur Hive.
+    applicatifs dans cette stack locale Docker quand le profil UI est active.
+    Necessaire car Hue envoie hive.server2.proxy.user pour l'editeur Hive.
   -->
   <property>
     <name>hadoop.proxyuser.hue.hosts</name>

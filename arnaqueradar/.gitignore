@@ -8,10 +8,22 @@ __pycache__/
 *.pyd
 *.pycache
 
+# Tous les fichiers data
+data/*
+
 # Raw and clean data exports (generated at runtime)
 data/raw_*.json
 data/clean_*.csv
-data/cnil_violations.csv
+data/clean_dataset.csv
+data/2_dataset_nettoye.csv
+data/3_dataset_enrichi.csv
+data/6_dataset_ml.csv
+data/quality_report.json
+data/quality_review_autre_sample.csv
+data/hive_phishstats_cache.json
+
+# External datasets downloaded outside the package root
+../data_CNIL/
 
 # Virtual environments
 venv/
@@ -38,6 +50,15 @@ build/
 
 # Dossiers pytest-cache
 .pytest-cache/
+.pytest_cache/
 
 # Dossiers de tests générés par pytest-autodoc
-pytest-cache-files*/    
+../pytest-cache-files*/
+pytest-cache-files*/
+
+# Hue runtime data (interface optionnelle)
+docker/hue/data/
+docker/hue/*.ini
+
+# Volumes Docker Hive generee localement
+hive-warehouse/

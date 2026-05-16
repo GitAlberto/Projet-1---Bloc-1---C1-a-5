@@ -2,15 +2,15 @@
 # Docker Compose - ArnaqueRadar
 # PostgreSQL est gere localement via pgAdmin4 (ne pas le demarrer ici).
 # Apache Hive est demarre via Docker pour la source Big Data.
-# `IS_RESUME=true` evite de relancer `schematool -initSchema` a chaque restart,
-# ce qui bloque sinon sur Derby avec "FUNCTION 'NUCLEUS_ASCII' already exists".
-# La table logs_arnaques est ensuite chargee avec des donnees reelles PhishStats.
+# `IS_RESUME=true` evite de relancer `schematool -initSchema` a chaque restart.
+# Hue fait partie du demarrage standard pour simplifier `up` / `down`.
 # =============================================================================
 
 services:
   metastore:
     image: apache/hive:4.0.0
     restart: unless-stopped
+    user: "0:0"
     entrypoint: ["/bin/sh", "/opt/hive/scripts/metastore-entrypoint.sh"]
     environment:
       SERVICE_NAME: metastore
@@ -21,6 +21,7 @@ services:
       retries: 12
       start_period: 20s
     volumes:
+      - hive-metastore-db:/opt/hive/metastore_volume
       - hive-warehouse:/opt/hive/data/warehouse
       - ./docker/hive/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
       - ./docker/hive/core-site.xml:/opt/hive/conf/core-site.xml:ro
@@ -29,7 +30,6 @@ services:
   hive:
     image: apache/hive:4.0.0
     restart: unless-stopped
-    entrypoint: ["/bin/bash", "/opt/hive/scripts/hiveserver2-entrypoint.sh"]
     depends_on:
       metastore:
         condition: service_healthy
@@ -59,39 +59,41 @@ services:
       - hive-warehouse:/opt/hive/data/warehouse
       - ./docker/hive/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
       - ./docker/hive/core-site.xml:/opt/hive/conf/core-site.xml:ro
-      - ./docker/hive/hiveserver2-entrypoint.sh:/opt/hive/scripts/hiveserver2-entrypoint.sh:ro
-
-  hue-db:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: hue
-      POSTGRES_USER: hue
-      POSTGRES_PASSWORD: hue
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hue -d hue"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
-    volumes:
-      - hue-db-data:/var/lib/postgresql/data
 
   hue:
     image: gethue/hue:latest
     restart: unless-stopped
+    user: "0:0"
+    entrypoint: ["/bin/sh", "/usr/share/hue/desktop/conf/entrypoint.sh"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      hive:
-        condition: service_started
-      hue-db:
+      metastore:
         condition: service_healthy
+      hive:
+        condition: service_healthy
+    environment:
+      PG_HOST: ${PG_HOST}
+      PG_PORT: ${PG_PORT}
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      HUE_DB_ENGINE: ${HUE_DB_ENGINE:-postgresql_psycopg2}
+      HUE_DB_HOST: ${HUE_DB_HOST:-host.docker.internal}
+      HUE_DB_PORT: ${HUE_DB_PORT:-}
+      HUE_DB_NAME: ${HUE_DB_NAME:-}
+      HUE_DB_USER: ${HUE_DB_USER:-}
+      HUE_DB_PASSWORD: ${HUE_DB_PASSWORD:-}
     ports:
       - "8888:8888"
     volumes:
-      - ./docker/hue/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini:ro
+      - ./docker/hue/entrypoint.sh:/usr/share/hue/desktop/conf/entrypoint.sh:ro
+      - hue-data:/usr/share/hue/desktop/data
 
 volumes:
+  hive-metastore-db:
   hive-warehouse:
-  hue-db-data:
+  hue-data:
 
-# Le volume conserve les donnees Hive entre les executions.
+# Les volumes conservent le metastore Derby et les donnees Hive entre les executions.
+# La stack complete se pilote avec `docker-compose up -d` / `docker-compose down`.
